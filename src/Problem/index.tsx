@@ -1,5 +1,6 @@
 import {
     Box,
+    Button,
     Card,
     IconButton,
     Pagination,
@@ -27,18 +28,18 @@ const Problem = () => {
         <LoadingScreen isLoading={isLoading}>
             <Actions />
 
-            <Box sx={{ minWidth: '1400px' }}>
+            <Box sx={{ minWidth: '1300px' }}>
                 <EnhancedTable
                     rows={data?.items || []}
                     columns={[
                         {
                             dataIndex: "id",
-                            headProps: {sx: {fontWeight: "bold"}},
+                            headProps: { sx: { fontWeight: "bold" } },
                             label: "ID",
                         },
                         {
-                            dataIndex:"title",
-                            headProps: {sx: {fontWeight: "bold"}},
+                            dataIndex: "title",
+                            headProps: { sx: { fontWeight: "bold" } },
                             label: "Title",
                         },
                         {
@@ -48,8 +49,10 @@ const Problem = () => {
                         },
                         {
                             dataIndex: "id",
-                            label: "Actions",
-                            props: {sx: {textAlign: "end", width: "120px"}},
+                            label: <Button variant="outlined" color="primary" sx={{ my: 'auto' }}>
+                                Thêm
+                            </Button>,
+                            props: { sx: { textAlign: "end", width: "120px" } },
                             render: (v) => (
                                 <Box display="flex" justifyContent={"end"}>
                                     <Tooltip title="Tính lại">
@@ -66,13 +69,8 @@ const Problem = () => {
                             ),
                         }
                     ]}
-                    title={undefined}
-                    setSelected={function (
-                        value: React.SetStateAction<number[]>,
-                    ): void {
-                        throw new Error('Function not implemented.')
-                    }}
-                    selected={[]}
+                    getRowKey={(row) => row.id!}
+                    onSelect={console.log}
                 />
                 {data?.totalPage && data.totalPage > 1 && (
                     <Pagination count={data?.totalPage} color="secondary" />

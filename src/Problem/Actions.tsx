@@ -10,7 +10,6 @@ const Actions = () => {
                 size="small"
                 label="Tìm kiếm"
                 variant="outlined"
-                sx={{ mr: 2 }}
                 InputProps={{
                     endAdornment: (
                         <IconButton aria-label="toggle password visibility">
@@ -19,9 +18,7 @@ const Actions = () => {
                     ),
                 }}
             />
-            <Button variant="contained" color="primary" sx={{ my: 'auto' }}>
-                Thêm
-            </Button>
+            
         </Box>
     )
 }

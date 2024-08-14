@@ -529,5 +529,5 @@ function throwException(message: string, status: number, response: string, heade
         throw new ApiException(message, status, response, headers, null);
 }
 
-const client = class2Object(new Client("http://localhost:5235"));
+const client = class2Object(new Client("https://demo.dat09.fun"));
 export default client as Client;

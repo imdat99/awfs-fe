@@ -8,8 +8,8 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-} from '@mui/material'
-import React, { memo, useMemo } from 'react'
+} from '@mui/material';
+import React, { useMemo } from 'react';
 
 
 export type Render<T> = (v: T, i?: number) => JSX.Element | string | number | null;
@@ -22,41 +22,42 @@ export interface IColumn<T = any> {
   key?: string;
   render?: Render<T>;
 }
-const genericMemo: <T>(component: T) => T = memo
-// type T = Record<string, React.ReactNode>;
 
 const randomId = (n = 1) => (Math.random() + n).toString(36).substring(7)
 
 interface EnhancedTableProps<T> {
     rows: T[];
     columns: IColumn<T>[];
-    title: React.ReactNode;
-    setSelected: React.Dispatch<React.SetStateAction<number[]>>;
-    selected: number[];
+    title?: React.ReactNode;
+    onSelect?: (selected: string[], isAll: boolean) => void;
     onRowChange?: React.FormEventHandler<HTMLTableRowElement>;
+    getRowKey?: (row: T) => string | number;
 }
 const EnhancedTable = <T,>({
     rows,
     columns,
     title,
-    setSelected,
-    selected,
     onRowChange,
+    getRowKey,
+    onSelect,
 }: EnhancedTableProps<T>) => {
+    const [selected, setSelected] = React.useState<string[]>([]);
+
+    React.useEffect(() => { onSelect && onSelect(selected, rows.length > 0 && selected.length === rows.length) }, [selected])
     const handleSelectAllClick = (
         event: React.ChangeEvent<HTMLInputElement>,
     ) => {
         if (event.target.checked) {
-            const newSelected = rows.map((_, i) => i)
+            const newSelected = rows.map((row, i) => String(getRowKey ? getRowKey(row) : i))
             setSelected(newSelected)
             return
         }
         setSelected([])
     }
 
-    const handleClick = (event: React.MouseEvent<unknown>, id: number) => {
+    const handleClick = (event: React.MouseEvent<unknown>, id: string) => {
         const selectedIndex = selected.indexOf(id)
-        let newSelected: number[] = []
+        let newSelected: string[] = []
 
         if (selectedIndex === -1) {
             newSelected = newSelected.concat(selected, id)
@@ -73,7 +74,7 @@ const EnhancedTable = <T,>({
         setSelected(newSelected)
     }
 
-    const isSelected = (id: number) => selected.indexOf(id) !== -1
+    const isSelected = (id: string) => selected.indexOf(id) !== -1
     const indeterminate = useMemo(
         () => selected.length > 0 && selected.length < rows.length,
         [rows, selected],
@@ -120,15 +121,16 @@ const EnhancedTable = <T,>({
 
                     <TableBody>
                         {rows.map((row, index) => {
-                            const isItemSelected = isSelected(index)
+                            const key = String(getRowKey ? getRowKey(row) : index);
+                            const isItemSelected = isSelected(key)
                             return (
                                 <TableRow
-                                    data-rowindex={index}
+                                    data-rowindex={key}
                                     hover
                                     role="checkbox"
                                     aria-checked={isItemSelected}
                                     tabIndex={-1}
-                                    key={index}
+                                    key={key}
                                     selected={isItemSelected}
                                     classes={{
                                         selected: 'app-row-selected',
@@ -138,7 +140,7 @@ const EnhancedTable = <T,>({
                                     <TableCell padding="checkbox">
                                         <Checkbox
                                             onClick={(event) =>
-                                                handleClick(event, index)
+                                                handleClick(event, key)
                                             }
                                             color="primary"
                                             checked={isItemSelected}
@@ -162,5 +164,4 @@ const EnhancedTable = <T,>({
     )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export default EnhancedTable;
