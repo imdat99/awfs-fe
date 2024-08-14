@@ -10,6 +10,7 @@ import {
     TableRow,
 } from '@mui/material';
 import React, { useMemo } from 'react';
+import { randomId } from 'Utils/helper';
 
 
 export type Render<T> = (v: T, i?: number) => JSX.Element | string | number | null;
@@ -23,8 +24,6 @@ export interface IColumn<T = any> {
   render?: Render<T>;
 }
 
-const randomId = (n = 1) => (Math.random() + n).toString(36).substring(7)
-
 interface EnhancedTableProps<T> {
     rows: T[];
     columns: IColumn<T>[];
@@ -32,6 +31,7 @@ interface EnhancedTableProps<T> {
     onSelect?: (selected: string[], isAll: boolean) => void;
     onRowChange?: React.FormEventHandler<HTMLTableRowElement>;
     getRowKey?: (row: T) => string | number;
+    onRowClick?: (row: T) => void;
 }
 const EnhancedTable = <T,>({
     rows,
@@ -40,10 +40,18 @@ const EnhancedTable = <T,>({
     onRowChange,
     getRowKey,
     onSelect,
+    onRowClick,
 }: EnhancedTableProps<T>) => {
     const [selected, setSelected] = React.useState<string[]>([]);
 
-    React.useEffect(() => { onSelect && onSelect(selected, rows.length > 0 && selected.length === rows.length) }, [selected])
+    React.useEffect(() => {
+        if (onSelect)
+            onSelect(
+                selected,
+                rows.length > 0 && selected.length === rows.length,
+            )
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rows.length, selected])
     const handleSelectAllClick = (
         event: React.ChangeEvent<HTMLInputElement>,
     ) => {
@@ -89,7 +97,7 @@ const EnhancedTable = <T,>({
                 {title}
                 <Table aria-labelledby="tableTitle">
                     <TableHead>
-                        <TableRow>
+                        <TableRow className='app-table-head'>
                             <TableCell padding="checkbox">
                                 <Checkbox
                                     color="primary"
@@ -105,11 +113,13 @@ const EnhancedTable = <T,>({
                                 (column, index) =>
                                     column.label && (
                                         <TableCell
+                                            className={`app-table-cell cell-${index}`}
                                             {...column?.[
                                                 column?.headProps
                                                     ? 'headProps'
                                                     : 'props'
                                             ]}
+                                            
                                             key={column.key || index}
                                         >
                                             {column.label}
@@ -125,8 +135,12 @@ const EnhancedTable = <T,>({
                             const isItemSelected = isSelected(key)
                             return (
                                 <TableRow
+                                    onClick={() => onRowClick && onRowClick(row)}
                                     data-rowindex={key}
                                     hover
+                                    sx={{
+                                        cursor: onRowClick ? 'pointer' : 'default',
+                                    }}
                                     role="checkbox"
                                     aria-checked={isItemSelected}
                                     tabIndex={-1}
@@ -140,7 +154,10 @@ const EnhancedTable = <T,>({
                                     <TableCell padding="checkbox">
                                         <Checkbox
                                             onClick={(event) =>
+                                            {
+                                                event.stopPropagation();
                                                 handleClick(event, key)
+                                            }
                                             }
                                             color="primary"
                                             checked={isItemSelected}

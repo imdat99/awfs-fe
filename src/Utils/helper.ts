@@ -17,3 +17,11 @@ export const class2Object = <T>(classConvert: T) => {
     }, {})
     return object as T
 }
+export const randomId = (n = 1) => (Math.random() + n).toString(36).substring(7)
+export const tryGetData = <T>(fn: () => T, defaultValue: T) => {
+    try {
+        return fn()
+    } catch {
+        return defaultValue
+    }
+}
