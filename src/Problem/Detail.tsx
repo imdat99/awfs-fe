@@ -223,6 +223,7 @@ const Detail = () => {
                         //     row: errorObj.errorIndex[0],
                         //     column: errorObj.errorIndex[1]
                         // }: undefined}
+                        onCellActive={(row, column) => setCurrentCell([row, column])}   
                         isChanged={isChanged}
                         onCellClick={(row, column) => setCurrentCell([row, column])}
                         onChange={handleChangeMatrix}

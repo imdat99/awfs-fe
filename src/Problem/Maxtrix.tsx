@@ -22,6 +22,7 @@ export interface MaxtrixProps {
     }
     isChanged?: number
     onCellClick?: (row: number, column: number) => void
+    onCellActive?: (row: number, column: number) => void
 }
 
 const Maxtrix: React.FC<MaxtrixProps> = ({
@@ -33,6 +34,7 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
     colWidth = 56,
     errorLocation,
     onCellClick,
+    onCellActive,
     isChanged: isChanged
 }) => {
     const containerRef = React.useRef<HTMLDivElement>(null)
@@ -63,7 +65,7 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         cell.style.left = `${left}px`
         cell.style.position = 'absolute'
         cell.textContent = content
-        if(Number(content) < 1 || Number(content) > rowCount*colCount) {
+        if (Number(content) < 1 || Number(content) > rowCount * colCount) {
             cell.style.background = '#d32f2f'
         }
         table.appendChild(cell)
@@ -121,6 +123,12 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
             }
         }
     }
+    const focusCell = (row: number, col: number) => {
+        const cell = container?.querySelector(
+            `[name="cell-${row}-${col}"]`,
+        ) as HTMLDivElement;
+        cell?.focus();
+    }
     function scrollToPosition(rowIndex: number, colIndex: number) {
         const targetScrollTop = rowIndex * rowHeight
         const targetScrollLeft = colIndex * colWidth
@@ -129,8 +137,6 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
             left: targetScrollLeft,
             behavior: 'smooth',
         })
-        setCurrentCell([rowIndex, colIndex])
-
         renderVisibleCells()
     }
     React.useEffect(() => {
@@ -152,7 +158,7 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         tableHeaderRow.style.height = `${rowHeight}px`
         tableHeaderCol.style.width = `${colWidth}px`
 
-     
+
         // scrollToPosition(100, 10)
         container.addEventListener('scroll', renderVisibleCells)
         container.onmousedown = (e) => {
@@ -192,29 +198,23 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         if (errorLocation) {
             scrollToPosition(errorLocation.row, errorLocation.column)
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [errorLocation])
     React.useEffect(() => {
+        container?.querySelectorAll('.current-cell').forEach((cell) => { cell.classList.remove('current-cell') })
+        onCellActive?.(currentCell[0], currentCell[1])
         const cell = container?.querySelector(
             `[name="cell-${currentCell[0]}-${currentCell[1]}"]`,
         ) as HTMLDivElement;
-        if(cell) {
+        if (cell) {
             cell!.classList.add('current-cell')
             cell!.textContent = String(data[currentCell[0]][currentCell[1]])
+            // cell?.focus()
             validateCell(cell)
         }
-    }
-    ,[data, currentCell, isChanged])
+    }, [data, currentCell, isChanged])
     React.useEffect(() => {
-        if(onCellClick) {onCellClick(currentCell[0], currentCell[1])}
-        container?.querySelectorAll('.current-cell').forEach((cell) => {cell.classList.remove('current-cell')})
-        const cell = container?.querySelector(
-            `[name="cell-${currentCell[0]}-${currentCell[1]}"]`,
-        ) as HTMLDivElement;
-        if(cell) {
-            cell!.classList.add('current-cell')
-           cell.focus()
-        }
+        focusCell(currentCell[0], currentCell[1])
     }, [currentCell])
     const validateCell = (cell: HTMLDivElement) => {
         let isError = false
@@ -277,65 +277,123 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
                     { row: 0, column: 0 },
                 )
             setCurrentCell([prosition.row, prosition.column])
+            onCellClick?.(prosition.row, prosition.column)
         }
     }
+    const scrollY = (row: number) => {
+        const targetScrollTop = row * rowHeight
+        container!.scrollTo({
+            top: targetScrollTop,
+            behavior: 'smooth',
+        })
+    }
+    const scrollX = (col: number) => {
+        const targetScrollLeft = col * colWidth
+        container!.scrollTo({
+            left: targetScrollLeft,
+            behavior: 'smooth',
+        })
+    }
     const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-        console.log(e.currentTarget)
         e.currentTarget.focus()
         switch (e.key) {
             case 'ArrowUp': {
                 e.preventDefault()
-                const nextRow = currentCell[0] - 1
-                if (nextRow >= 0) {
-                    scrollToPosition(nextRow, currentCell[1])
-                }
+                setCurrentCell((p) => {
+                    const nextRow = p[0] - 1
+                    if (nextRow >= 0) {
+                        const needscroll = checkCellPosition(nextRow, p[1])
+                        if (needscroll.nearTopEdge && nextRow > 0) {
+                            scrollY(nextRow - 7 > 0 ? nextRow - 7 : 0)
+                            const timeout = setTimeout(() => {
+                                focusCell(nextRow, p[1])
+                                clearTimeout(timeout)
+                            }, 550)
+                        }
+                        return [nextRow, p[1]]
+                    }
+                    return p
+                })
                 break
             }
             case 'ArrowLeft': {
                 e.preventDefault()
-                const nextCol = currentCell[1] - 1
-                if (nextCol >= 0) {
-                    scrollToPosition(currentCell[0], nextCol)
-                }
+                setCurrentCell((p) => {
+                    const nextCol = p[1] - 1
+                    if (nextCol >= 0) {
+                        const needscroll = checkCellPosition(p[0], p[1])
+                        if (needscroll.nearLeftEdge && nextCol > 0) {
+                            scrollX(nextCol - 7 > 0 ? nextCol - 7 : 0)
+                            const timeout = setTimeout(() => {
+                                focusCell(p[0], nextCol)
+                                clearTimeout(timeout)
+                            }, 550)
+                        }
+                        return [p[0], nextCol]
+                    }
+                    return p
+                })
                 break
             }
             case 'Tab':
             case 'ArrowRight': {
                 e.preventDefault()
-                const nextCol = currentCell[1] + 1
-                if (nextCol < colCount) {
-                    scrollToPosition(currentCell[0], nextCol)
-                }
+                setCurrentCell((p) => {
+                    const nextCol = p[1] + 1
+                    if (nextCol < colCount) {
+                        const needscroll = checkCellPosition(p[0], nextCol)
+                        if (needscroll.nearRightEdge && nextCol < colCount - 1) {
+                            scrollX(nextCol)
+                            const timeout = setTimeout(() => {
+                                focusCell(p[0], nextCol)
+                                clearTimeout(timeout)
+                            }, 550)
+                        }
+                        return [p[0], nextCol]
+                    }
+                    return p
+                })
                 break
             }
-            case 'Enter': 
+            case 'Enter':
             case 'ArrowDown': {
-                console.log('down')
-                e.currentTarget.click()
-                // e.preventDefault()
-                const nextRow = currentCell[0] + 1
-                if (nextRow < rowCount) {
-                    scrollToPosition(nextRow, currentCell[1])
-                }
+                e.preventDefault()
+                setCurrentCell((p) => {
+                    const nextRow = p[0] + 1
+                    if (nextRow < rowCount) {
+                        const needscroll = checkCellPosition(nextRow, p[1])
+                        if (needscroll.nearBottomEdge && nextRow < rowCount - 1) {
+                            scrollY(nextRow)
+                            const timeout = setTimeout(() => {
+                                focusCell(nextRow, p[1])
+                                clearTimeout(timeout)
+                            }, 550)
+                        }
+                        return [nextRow, p[1]]
+                    }
+                    return p
+                })
                 break
             }
-                
+
             default:
                 break
         }
-        // if (e.key === 'Enter') {
-        //     e.preventDefault()
-        //     const nextRow = currentCell[0] + 1
-        //     if (nextRow < rowCount) {
-        //         setCurrentCell([nextRow, currentCell[1]])
-        //     }
-        // }
-        // if (e.key === 'ArrowDown') {
-        //     e.preventDefault()
-        //     const nextRow = currentCell[0] + 1
-        //     if (nextRow < rowCount) {
-        //         setCurrentCell([nextRow, currentCell[1]])
-        //     }
+    }
+    const checkCellPosition = (row: number, col: number) => {
+        const cell = container?.querySelector(
+            `[name="cell-${row}-${col}"]`,
+        ) as HTMLDivElement;
+        const cellRect = cell?.getBoundingClientRect() || { top: 0, bottom: 0, left: 0, right: 0 }
+        const containerRect = container?.getBoundingClientRect() || { top: 0, bottom: 0, left: 0, right: 0 }
+        const cellHeight = cellRect?.height;
+        const cellWidth = cellRect?.width;
+        return {
+            nearTopEdge: cellRect.top - containerRect?.top <= cellHeight + 10,
+            nearBottomEdge: containerRect?.bottom - cellRect.bottom < cellHeight,
+            nearLeftEdge: cellRect.left - containerRect?.left < cellWidth + 10,
+            nearRightEdge: containerRect?.right - cellRect.right < cellWidth,
+        }
     }
     return (
         <FormStyled id="table-vip" onInput={handleInput} onClick={handleOnClick} onKeyDown={handleKeyDown}>
