@@ -7,8 +7,11 @@ type ReturnType<T extends (...args: any[]) => any> = T extends (...args: any[]) 
 type Fetcher<ParamsType extends any[] = any[], ReturnType = any> = (...params: ParamsType) => Promise<ReturnType>;
 
 const useGetData = <T extends Fetcher>(
-    params: Params<T>,
-    fetcher: T
+    params: Params<T> & Array<any>,
+    fetcher: T,
+    otps?: {
+        trigger?: any;
+    }
 ): [UnwrapPromise<ReturnType<T>> | undefined, boolean] => {
     const [isLoading, setLoading] = React.useState(true);
     const [data, setData] = React.useState<UnwrapPromise<ReturnType<T>>>();
@@ -16,7 +19,7 @@ const useGetData = <T extends Fetcher>(
     React.useEffect(() => {
         fetchData(params)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, params);
+    }, [...params, otps?.trigger]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const fetchData = React.useCallback(debounce((params: Params<T>) => {
         setLoading(true);

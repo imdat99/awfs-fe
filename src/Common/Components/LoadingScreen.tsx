@@ -9,7 +9,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
     children,
 }) => {
     return (
-        <Box sx={{ position: 'relative' }}>
+        <Box sx={{ position: 'relative', height: "100%" }}>
             {isLoading && (
                 <Box
                     sx={{
@@ -29,7 +29,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
                     <CircularProgress sx={{m: "auto"}}/>
                 </Box>
             )}
-            {children}
+            {!isLoading && children}
         </Box>
     )
 }
