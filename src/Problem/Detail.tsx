@@ -54,7 +54,7 @@ const Detail = () => {
             errorIndex
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, matrixData.data.flat())
+    }, [matrixData.data.flat()])
     const updateMatrix = React.useCallback(
         (newRows: number, newColumns: number) => {
             setMatrixData((prevState) => {

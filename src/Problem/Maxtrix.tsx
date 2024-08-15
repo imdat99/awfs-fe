@@ -124,14 +124,13 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
     function scrollToPosition(rowIndex: number, colIndex: number) {
         const targetScrollTop = rowIndex * rowHeight
         const targetScrollLeft = colIndex * colWidth
-
         container!.scrollTo({
             top: targetScrollTop,
             left: targetScrollLeft,
-            behavior: 'smooth', // Cuộn mượt mà
+            behavior: 'smooth',
         })
+        setCurrentCell([rowIndex, colIndex])
 
-        // Render lại các ô sau khi cuộn đến vị trí mới
         renderVisibleCells()
     }
     React.useEffect(() => {
@@ -196,7 +195,6 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [errorLocation])
     React.useEffect(() => {
-        console.log("isChanged", isChanged)
         const cell = container?.querySelector(
             `[name="cell-${currentCell[0]}-${currentCell[1]}"]`,
         ) as HTMLDivElement;
@@ -208,7 +206,15 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
     }
     ,[data, currentCell, isChanged])
     React.useEffect(() => {
-        if(onCellClick) onCellClick(currentCell[0], currentCell[1])
+        if(onCellClick) {onCellClick(currentCell[0], currentCell[1])}
+        container?.querySelectorAll('.current-cell').forEach((cell) => {cell.classList.remove('current-cell')})
+        const cell = container?.querySelector(
+            `[name="cell-${currentCell[0]}-${currentCell[1]}"]`,
+        ) as HTMLDivElement;
+        if(cell) {
+            cell!.classList.add('current-cell')
+           cell.focus()
+        }
     }, [currentCell])
     const validateCell = (cell: HTMLDivElement) => {
         let isError = false
@@ -252,29 +258,87 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         [colCount, rowCount],
     )
     const handleChange = React.useCallback(debounce(onChange, 200), [])
-    return (
-        <FormStyled id="table-vip" onInput={handleInput} onClick={(e) => {
-            container?.querySelectorAll('.current-cell').forEach((cell) => {cell.classList.remove('current-cell')})
-            const cell = e.target as HTMLDivElement
-            const cellName = cell.getAttribute('name')!
-            if (cellName?.includes('cell')) {
-                const prosition = cellName
-                    .split('-')
-                    .slice(1)
-                    .reduce(
-                        (acc, cur, index) => {
-                            if (index == 0) {
-                                acc.row = Number(cur)
-                            } else {
-                                acc.column = Number(cur)
-                            }
-                            return acc
-                        },
-                        { row: 0, column: 0 },
-                    )
-                setCurrentCell([prosition.row, prosition.column])
+    const handleOnClick = (e: React.MouseEvent<HTMLFormElement, MouseEvent>) => {
+        const cell = e.target as HTMLDivElement
+        const cellName = cell.getAttribute('name')!
+        if (cellName?.includes('cell')) {
+            const prosition = cellName
+                .split('-')
+                .slice(1)
+                .reduce(
+                    (acc, cur, index) => {
+                        if (index == 0) {
+                            acc.row = Number(cur)
+                        } else {
+                            acc.column = Number(cur)
+                        }
+                        return acc
+                    },
+                    { row: 0, column: 0 },
+                )
+            setCurrentCell([prosition.row, prosition.column])
+        }
+    }
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+        console.log(e.currentTarget)
+        e.currentTarget.focus()
+        switch (e.key) {
+            case 'ArrowUp': {
+                e.preventDefault()
+                const nextRow = currentCell[0] - 1
+                if (nextRow >= 0) {
+                    scrollToPosition(nextRow, currentCell[1])
+                }
+                break
             }
-        }}>
+            case 'ArrowLeft': {
+                e.preventDefault()
+                const nextCol = currentCell[1] - 1
+                if (nextCol >= 0) {
+                    scrollToPosition(currentCell[0], nextCol)
+                }
+                break
+            }
+            case 'Tab':
+            case 'ArrowRight': {
+                e.preventDefault()
+                const nextCol = currentCell[1] + 1
+                if (nextCol < colCount) {
+                    scrollToPosition(currentCell[0], nextCol)
+                }
+                break
+            }
+            case 'Enter': 
+            case 'ArrowDown': {
+                console.log('down')
+                e.currentTarget.click()
+                // e.preventDefault()
+                const nextRow = currentCell[0] + 1
+                if (nextRow < rowCount) {
+                    scrollToPosition(nextRow, currentCell[1])
+                }
+                break
+            }
+                
+            default:
+                break
+        }
+        // if (e.key === 'Enter') {
+        //     e.preventDefault()
+        //     const nextRow = currentCell[0] + 1
+        //     if (nextRow < rowCount) {
+        //         setCurrentCell([nextRow, currentCell[1]])
+        //     }
+        // }
+        // if (e.key === 'ArrowDown') {
+        //     e.preventDefault()
+        //     const nextRow = currentCell[0] + 1
+        //     if (nextRow < rowCount) {
+        //         setCurrentCell([nextRow, currentCell[1]])
+        //     }
+    }
+    return (
+        <FormStyled id="table-vip" onInput={handleInput} onClick={handleOnClick} onKeyDown={handleKeyDown}>
             <div className="table-container" ref={containerRef}>
                 <div className="table-header-row" ref={tableHeaderRowRef}></div>
                 <div className="table-header-col" ref={tableHeaderColRef}></div>
