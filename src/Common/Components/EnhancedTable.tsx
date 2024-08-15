@@ -13,7 +13,7 @@ import React, { useMemo } from 'react';
 import { randomId } from 'Utils/helper';
 
 
-export type Render<T> = (v: T, i?: number) => JSX.Element | string | number | null;
+export type Render<T> = (v: T, i?: number) => React.ReactNode | JSX.Element | string | number | null;
 
 export interface IColumn<T = any> {
   label?: React.ReactNode;
@@ -130,6 +130,16 @@ const EnhancedTable = <T,>({
                     </TableHead>
 
                     <TableBody>
+                        {rows.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={columns.length + 1} sx={{
+                                    textAlign: 'center',
+                                    padding: '20px',
+                                }}>
+                                    Không có dữ liệu
+                                </TableCell>
+                            </TableRow>
+                        )}
                         {rows.map((row, index) => {
                             const key = String(getRowKey ? getRowKey(row) : index);
                             const isItemSelected = isSelected(key)

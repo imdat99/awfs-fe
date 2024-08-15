@@ -6,6 +6,7 @@ export interface MaxtrixProps {
     row: number
     column: number
     data: number[][]
+    triggerReload?: number
     rowHeight?: number
     colWidth?: number
     onChange: (
@@ -35,7 +36,8 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
     errorLocation,
     onCellClick,
     onCellActive,
-    isChanged: isChanged
+    isChanged,
+    triggerReload
 }) => {
     const containerRef = React.useRef<HTMLDivElement>(null)
     const tableRef = React.useRef<HTMLDivElement>(null)
@@ -140,6 +142,8 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         renderVisibleCells()
     }
     React.useEffect(() => {
+        if (isNaN(Number(rowCount))) return
+        
         let isDragging = false
         let startX: number,
             startY: number,
@@ -193,7 +197,7 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         }
         // Rest of the code...
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rowCount, colCount, containerRef.current])
+    }, [rowCount, colCount, containerRef.current, triggerReload])
     React.useEffect(() => {
         if (errorLocation) {
             scrollToPosition(errorLocation.row, errorLocation.column)
@@ -297,87 +301,87 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
         e.currentTarget.focus()
         switch (e.key) {
-            case 'ArrowUp': {
-                e.preventDefault()
-                setCurrentCell((p) => {
-                    const nextRow = p[0] - 1
-                    if (nextRow >= 0) {
-                        const needscroll = checkCellPosition(nextRow, p[1])
-                        if (needscroll.nearTopEdge && nextRow > 0) {
-                            scrollY(nextRow - 7 > 0 ? nextRow - 7 : 0)
-                            const timeout = setTimeout(() => {
-                                focusCell(nextRow, p[1])
-                                clearTimeout(timeout)
-                            }, 550)
-                        }
-                        return [nextRow, p[1]]
+        case 'ArrowUp': {
+            e.preventDefault()
+            setCurrentCell((p) => {
+                const nextRow = p[0] - 1
+                if (nextRow >= 0) {
+                    const needscroll = checkCellPosition(nextRow, p[1])
+                    if (needscroll.nearTopEdge && nextRow > 0) {
+                        scrollY(nextRow - 7 > 0 ? nextRow - 7 : 0)
+                        const timeout = setTimeout(() => {
+                            focusCell(nextRow, p[1])
+                            clearTimeout(timeout)
+                        }, 550)
                     }
-                    return p
-                })
-                break
-            }
-            case 'ArrowLeft': {
-                e.preventDefault()
-                setCurrentCell((p) => {
-                    const nextCol = p[1] - 1
-                    if (nextCol >= 0) {
-                        const needscroll = checkCellPosition(p[0], p[1])
-                        if (needscroll.nearLeftEdge && nextCol > 0) {
-                            scrollX(nextCol - 7 > 0 ? nextCol - 7 : 0)
-                            const timeout = setTimeout(() => {
-                                focusCell(p[0], nextCol)
-                                clearTimeout(timeout)
-                            }, 550)
-                        }
-                        return [p[0], nextCol]
+                    return [nextRow, p[1]]
+                }
+                return p
+            })
+            break
+        }
+        case 'ArrowLeft': {
+            e.preventDefault()
+            setCurrentCell((p) => {
+                const nextCol = p[1] - 1
+                if (nextCol >= 0) {
+                    const needscroll = checkCellPosition(p[0], p[1])
+                    if (needscroll.nearLeftEdge && nextCol > 0) {
+                        scrollX(nextCol - 7 > 0 ? nextCol - 7 : 0)
+                        const timeout = setTimeout(() => {
+                            focusCell(p[0], nextCol)
+                            clearTimeout(timeout)
+                        }, 550)
                     }
-                    return p
-                })
-                break
-            }
-            case 'Tab':
-            case 'ArrowRight': {
-                e.preventDefault()
-                setCurrentCell((p) => {
-                    const nextCol = p[1] + 1
-                    if (nextCol < colCount) {
-                        const needscroll = checkCellPosition(p[0], nextCol)
-                        if (needscroll.nearRightEdge && nextCol < colCount - 1) {
-                            scrollX(nextCol)
-                            const timeout = setTimeout(() => {
-                                focusCell(p[0], nextCol)
-                                clearTimeout(timeout)
-                            }, 550)
-                        }
-                        return [p[0], nextCol]
+                    return [p[0], nextCol]
+                }
+                return p
+            })
+            break
+        }
+        case 'Tab':
+        case 'ArrowRight': {
+            e.preventDefault()
+            setCurrentCell((p) => {
+                const nextCol = p[1] + 1
+                if (nextCol < colCount) {
+                    const needscroll = checkCellPosition(p[0], nextCol)
+                    if (needscroll.nearRightEdge && nextCol < colCount - 1) {
+                        scrollX(nextCol)
+                        const timeout = setTimeout(() => {
+                            focusCell(p[0], nextCol)
+                            clearTimeout(timeout)
+                        }, 550)
                     }
-                    return p
-                })
-                break
-            }
-            case 'Enter':
-            case 'ArrowDown': {
-                e.preventDefault()
-                setCurrentCell((p) => {
-                    const nextRow = p[0] + 1
-                    if (nextRow < rowCount) {
-                        const needscroll = checkCellPosition(nextRow, p[1])
-                        if (needscroll.nearBottomEdge && nextRow < rowCount - 1) {
-                            scrollY(nextRow)
-                            const timeout = setTimeout(() => {
-                                focusCell(nextRow, p[1])
-                                clearTimeout(timeout)
-                            }, 550)
-                        }
-                        return [nextRow, p[1]]
+                    return [p[0], nextCol]
+                }
+                return p
+            })
+            break
+        }
+        case 'Enter':
+        case 'ArrowDown': {
+            e.preventDefault()
+            setCurrentCell((p) => {
+                const nextRow = p[0] + 1
+                if (nextRow < rowCount) {
+                    const needscroll = checkCellPosition(nextRow, p[1])
+                    if (needscroll.nearBottomEdge && nextRow < rowCount - 1) {
+                        scrollY(nextRow)
+                        const timeout = setTimeout(() => {
+                            focusCell(nextRow, p[1])
+                            clearTimeout(timeout)
+                        }, 550)
                     }
-                    return p
-                })
-                break
-            }
+                    return [nextRow, p[1]]
+                }
+                return p
+            })
+            break
+        }
 
-            default:
-                break
+        default:
+            break
         }
     }
     const checkCellPosition = (row: number, col: number) => {
