@@ -29,7 +29,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
                     <CircularProgress sx={{m: "auto"}}/>
                 </Box>
             )}
-            {!isLoading && children}
+            {children}
         </Box>
     )
 }

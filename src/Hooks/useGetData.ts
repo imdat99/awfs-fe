@@ -26,7 +26,7 @@ const useGetData = <T extends Fetcher>(
         fetcher(...params)
             .then((result) => setData(result))
             .finally(() => {setLoading(false)}); 
-    }, 100), [])
+    }, 150), [])
     return [data, isLoading];
     
 };

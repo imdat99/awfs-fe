@@ -38,7 +38,7 @@ const BtnOption: React.FC<BtnOptionProps> = ({loading, options, onClick, disable
         setOpen(false)
     }
     const handleMenuItemClick = (
-        event: React.MouseEvent<HTMLLIElement, MouseEvent>,
+        _event: React.MouseEvent<HTMLLIElement, MouseEvent>,
         index: number,
     ) => {
         setSelectedIndex(index)

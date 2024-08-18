@@ -19,7 +19,7 @@ const Actions: React.FC<ActionsProps> = ({onFilterChange}) => {
     }, 500), [])
     return (
         <Box display={'flex'} sx={{ mb: 2, justifyContent: "end" }}>
-            <Typography variant="overline" sx={{ my: 'auto', mr: 2, cursor: "pointer", userSelect : "none" }} onClick={(e) => {
+            <Typography variant="overline" sx={{ my: 'auto', mr: 2, cursor: "pointer", userSelect : "none" }} onClick={(_e) => {
                 setFilter((p) => ({...p, isSolved: p.isSolved === null ? true : p.isSolved ? !p.isSolved : null}))
             }}>
                 <Chip label={filter.isSolved === null ? "Tất cả" : filter.isSolved ? "Đã giải" : "Chưa giải"} />

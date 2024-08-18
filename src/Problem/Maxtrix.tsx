@@ -17,13 +17,11 @@ export interface MaxtrixProps {
         },
         isError?: boolean,
     ) => void
-    errorLocation?: {
-        row: number
-        column: number
-    }
+    isMatrixError: boolean
     isChanged?: number
     onCellClick?: (row: number, column: number) => void
     onCellActive?: (row: number, column: number) => void
+    chestTypes: number;
 }
 
 const Maxtrix: React.FC<MaxtrixProps> = ({
@@ -33,11 +31,12 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
     onChange,
     rowHeight = 56,
     colWidth = 56,
-    errorLocation,
+    isMatrixError,
     onCellClick,
     onCellActive,
     isChanged,
-    triggerReload
+    triggerReload,
+    chestTypes
 }) => {
     const containerRef = React.useRef<HTMLDivElement>(null)
     const tableRef = React.useRef<HTMLDivElement>(null)
@@ -67,11 +66,11 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         cell.style.left = `${left}px`
         cell.style.position = 'absolute'
         cell.textContent = content
-        if (Number(content) < 1 || Number(content) > rowCount * colCount) {
+        if ((Number(content) < 1 || Number(content) >= chestTypes) && className === "cell" && isMatrixError) {
             cell.style.background = '#d32f2f'
         }
         table.appendChild(cell)
-    }, [colCount, rowCount])
+    }, [chestTypes, isMatrixError])
 
     const renderVisibleCells = () => {
         if (!container || !table || !tableHeaderRow || !tableHeaderCol) return
@@ -131,16 +130,6 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         ) as HTMLDivElement;
         cell?.focus();
     }
-    function scrollToPosition(rowIndex: number, colIndex: number) {
-        const targetScrollTop = rowIndex * rowHeight
-        const targetScrollLeft = colIndex * colWidth
-        container!.scrollTo({
-            top: targetScrollTop,
-            left: targetScrollLeft,
-            behavior: 'smooth',
-        })
-        renderVisibleCells()
-    }
     React.useEffect(() => {
         if (isNaN(Number(rowCount))) return
         
@@ -198,12 +187,7 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         // Rest of the code...
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rowCount, colCount, containerRef.current, triggerReload])
-    React.useEffect(() => {
-        if (errorLocation) {
-            scrollToPosition(errorLocation.row, errorLocation.column)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [errorLocation])
+
     React.useEffect(() => {
         container?.querySelectorAll('.current-cell').forEach((cell) => { cell.classList.remove('current-cell') })
         onCellActive?.(currentCell[0], currentCell[1])
@@ -221,10 +205,11 @@ const Maxtrix: React.FC<MaxtrixProps> = ({
         focusCell(currentCell[0], currentCell[1])
     }, [currentCell])
     const validateCell = (cell: HTMLDivElement) => {
+        console.log("isMatrixError", isMatrixError)
         let isError = false
         if (
-            Number(cell.textContent) == 0 ||
-            Number(cell.textContent) > rowCount * colCount
+            (Number(cell.textContent) < 1 ||
+            Number(cell.textContent) >= chestTypes) && isMatrixError
         ) {
             isError = true
             // (cell.textContent as any) = 1;

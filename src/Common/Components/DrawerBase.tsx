@@ -12,28 +12,30 @@ import BtnOption, { BtnOptionProps } from 'Common/Components/BtnOption'
 import React, { PropsWithChildren } from 'react'
 import LoadingScreen from 'Common/Components/LoadingScreen'
 import ConfirmDialog from './ConfirmDialog'
+import { CLOSE_TYPE } from 'Common/Enums'
 
 export type DrawerBaseProps = PropsWithChildren<{
     title: React.ReactNode,
     onSubmitted: (type: string) => Promise<any>,
     isDisableSubmit: boolean
     loading: boolean
-    onClose: () => void
+    onClose: (type?: CLOSE_TYPE) => void
     isConfirm?: boolean,
     submidOptions: { label: string, value: string }[]
 }>
 const DrawerBase: React.FC<DrawerBaseProps> = (props) => {
     const { title, onSubmitted, children , isDisableSubmit, loading, onClose, isConfirm, submidOptions: options} = props
     const [isOpen, setIsOpen] = React.useState<boolean>()
+    const [closeType, setCloseType] = React.useState<CLOSE_TYPE>(CLOSE_TYPE.NORMAL)
     const [isConfirmOpen, setIsConfirm] = React.useState<boolean>(false)
     const [loadingBtn, setLoadingBtn] = React.useState(false)
-    const [isLoading, setIsLoading] = React.useState(false)
     
-    const handleSubmit: BtnOptionProps['onClick'] = (e, key) => {
+    const handleSubmit: BtnOptionProps['onClick'] = (_e, key) => {
         setLoadingBtn(true)
         onSubmitted(options[key].value).then(
             () => {
                 setIsOpen(false)
+                setCloseType(CLOSE_TYPE.SUCCESS)
             }
         ).finally(()=> {
             setLoadingBtn(false)
@@ -45,7 +47,7 @@ const DrawerBase: React.FC<DrawerBaseProps> = (props) => {
     React.useEffect(() => {
         if(isOpen === false && onClose) {
             const timeout = setTimeout(() => {
-                onClose()
+                onClose(closeType)
                 clearTimeout(timeout)
             }, 300)
         }
@@ -105,7 +107,7 @@ const DrawerBase: React.FC<DrawerBaseProps> = (props) => {
                     </Stack>
                 </Box>
                 <Divider />
-                <LoadingScreen isLoading={isLoading || loading}>
+                <LoadingScreen isLoading={loading}>
                     {children}
                 </LoadingScreen>
             </Drawer>

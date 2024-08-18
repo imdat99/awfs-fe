@@ -4,11 +4,11 @@ import React from 'react'
 import client, { ProblemDTO } from 'Utils/Client'
 import Maxtrix, { MaxtrixProps } from './Maxtrix'
 import { Repeat } from '@mui/icons-material'
-import ConfirmDialog from 'Common/Components/ConfirmDialog'
+import { CLOSE_TYPE } from 'Common/Enums'
 
 interface DetailProps {
     id: number
-    onClose: () => void
+    onClose: (type?: CLOSE_TYPE) => void
 }
 const Detail: React.FC<DetailProps> = ({ id, onClose }) => {
     const [problemData, setProblemData] = React.useState<ProblemDTO>(
@@ -27,26 +27,26 @@ const Detail: React.FC<DetailProps> = ({ id, onClose }) => {
     ])
     const errorObj = React.useMemo(() => {
         let errorIndex = [0, 0]
-        const error = Boolean(
-            problemData.matrix?.some((row, i) =>
-                row.some((value, j) => {
-                    if (
-                        value < 1 ||
-                        value > problemData.row! * problemData.col!
-                    ) {
-                        errorIndex = [i, j]
-                        return true
-                    }
-                    return false
-                }),
-            ),
+        const greaterThan: number[] = [];
+        problemData.matrix?.forEach((row, i) =>
+            row.filter((value, j) => {
+                if (
+                    value < 1 ||
+                        value >= problemData.chestTypes!
+                ) {
+                    errorIndex = [i, j]
+                    greaterThan.push(value)
+                    return true
+                }
+                return false
+            }).length > 0,
         )
         return {
-            isError: error,
+            isError: greaterThan.length != 1 || (problemData.matrix!.flat().length < 2 && greaterThan.some((v) => v < 1 || v >= problemData.chestTypes!)),
             errorIndex,
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [problemData.matrix?.flat()])
+    }, [problemData.matrix?.flat(), problemData.chestTypes])
     React.useEffect(() => {
         if(id) {
             setIsLoading(true)
@@ -93,7 +93,7 @@ const Detail: React.FC<DetailProps> = ({ id, onClose }) => {
         [],
     )
     const handleChangeMatrix: MaxtrixProps['onChange'] = React.useCallback(
-        (data, position, isError) => {
+        (data, position, _isError) => {
             setIsChanged(Math.random())
             setProblemData((p) => {
                 const cloneData = p.matrix!
@@ -112,17 +112,20 @@ const Detail: React.FC<DetailProps> = ({ id, onClose }) => {
                 row.map(
                     () =>
                         Math.floor(
-                            Math.random() * problemData.row! * problemData.col!,
+                            Math.random() * (problemData.chestTypes! - 1) || 0,
                         ) + 1,
                 ),
             )
-            return ProblemDTO.fromJS({
+            const random = (num: number) => Math.floor(Math.random() * num!)
+            cloneData[random(cloneData.length)][random(cloneData[0].length)] = problemData.chestTypes!
+            return ({
                 ...p,
                 matrix: cloneData,
-            })
+            } as ProblemDTO) 
         })
+        setIsChanged(Math.random())
         setTrigger(Math.random())
-    }, [problemData.col, problemData.row])
+    }, [problemData.chestTypes])
     return (
         <>
             <DrawerBase
@@ -242,7 +245,7 @@ const Detail: React.FC<DetailProps> = ({ id, onClose }) => {
                                             row: currentCell[0],
                                             column: currentCell[1],
                                         },
-                                        value > 0 && value <= 500,
+                                        value > 0 && value <= problemData.chestTypes!,
                                     )
                                     // updateMatrix(-1, value)
                                 }
@@ -263,7 +266,7 @@ const Detail: React.FC<DetailProps> = ({ id, onClose }) => {
                         sx={{ color: errorObj.isError ? 'red' : 'gray' }}
                     >
                         (Sử dụng các phím mũi tên để di chuyển, giá trị nhỏ nhất
-                        là 1, lớn nhất là {problemData.row! * problemData.col!}{' '}
+                        là 1, lớn nhất là {problemData.chestTypes}{' '}
                         {errorObj.isError ? (
                             <span>
                                 Lỗi ở ô ({errorObj.errorIndex[0] + 1},{' '}
@@ -290,10 +293,8 @@ const Detail: React.FC<DetailProps> = ({ id, onClose }) => {
                                 column={problemData.col!}
                                 row={problemData.row!}
                                 data={problemData.matrix!}
-                                // errorLocation={errorObj.isError ? {
-                                //     row: errorObj.errorIndex[0],
-                                //     column: errorObj.errorIndex[1]
-                                // }: undefined}
+                                chestTypes={problemData.chestTypes!}
+                                isMatrixError={errorObj.isError}
                                 triggerReload={triggerReload}
                                 onCellActive={(row, column) =>
                                     setCurrentCell([row, column])

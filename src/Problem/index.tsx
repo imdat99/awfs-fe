@@ -8,6 +8,7 @@ import Client from 'Utils/Client'
 import Actions from './Actions'
 import Detail from './Detail'
 import ConfirmDialog, { ConfirmDialogProps } from 'Common/Components/ConfirmDialog'
+import { CLOSE_TYPE } from 'Common/Enums'
 const Problem = () => {
     // const [selectedRow, setSelected] = React.useState<string[]>([])
     const [detailId, setDetailId] = React.useState<number>(-1)
@@ -24,6 +25,7 @@ const Problem = () => {
         open: false,
         onConfirm: () => Promise.resolve(),
     })
+    const [loading, setLoading] = React.useState(false)
     const [data, isLoading] = useGetData(
         [query.isSolved ?? undefined, query.title, query.page, query.pageSize],
         Client.getProblem,
@@ -60,6 +62,7 @@ const Problem = () => {
             }
             setclickType('')
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [clickType])
     const handleRemove = (ids: string[]) => {
         return Client.remove(ids.map((id) => parseInt(id))).then(() => {
@@ -69,18 +72,29 @@ const Problem = () => {
         })
     }
     const handleReSolver = (id: string) => {
-        
-        Client.resolve(parseInt(id)).then(() => setTrigger(Math.random()))
+        setLoading(true)
+        Client.resolve(parseInt(id)).then(() => setTrigger(Math.random())).finally(() => setLoading(false))
     }
     return (
         <>
-            <ConfirmDialog open={dialogData.open} setOpen={(open) => {
-                setDialogData((prev) => ({...prev, open}))
-            }}
-            onConfirm={dialogData.onConfirm}
+            <ConfirmDialog
+                open={dialogData.open}
+                setOpen={(open) => {
+                    setDialogData((prev) => ({ ...prev, open }))
+                }}
+                onConfirm={dialogData.onConfirm}
             />
-            {detailId !== -1 && <Detail id={detailId} onClose={() => {setDetailId(-1); setTrigger(Math.random())}} />}
-            <LoadingScreen isLoading={isLoading}>
+            {detailId !== -1 && (
+                <Detail
+                    id={detailId}
+                    onClose={(type?: CLOSE_TYPE) => {
+                        setDetailId(-1)
+                        if (type === CLOSE_TYPE.SUCCESS)
+                            setTrigger(Math.random())
+                    }}
+                />
+            )}
+            <LoadingScreen isLoading={isLoading || loading}>
                 <Actions
                     onFilterChange={(filter) =>
                         setQuery((p) => ({ ...p, ...filter }))
@@ -123,7 +137,10 @@ const Problem = () => {
                             {
                                 dataIndex: 'result',
                                 label: selectedRow.length ? '' : 'Result',
-                                render: (v) => !isNaN(Number(v.result)) ? v.result : 'Chưa có kết quả',
+                                render: (v) =>
+                                    !isNaN(Number(v.result))
+                                        ? v.result
+                                        : 'Chưa có kết quả',
                             },
                             {
                                 dataIndex: 'id',
@@ -197,6 +214,7 @@ const Problem = () => {
                     />
                     {!!data?.totalPage && data.totalPage > 1 && (
                         <Pagination
+                            sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}
                             count={data?.totalPage}
                             color="secondary"
                             onChange={(_e, page) => {
